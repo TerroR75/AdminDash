@@ -1,0 +1,40 @@
+INSERT INTO projekty (nazwa) VALUES
+('System zarządzania projektami'),
+('Aplikacja mobilna dla banku'),
+('Modernizacja strony internetowej'),
+('Platforma e-learningowa');
+
+-- Wstawianie danych do tabeli uzytkownicy (pomijam utworzony)
+-- Uwaga: kierownik_id musi istnieć, więc najpierw wstawiam kierowników
+INSERT INTO uzytkownicy (imie, nazwisko, stanowisko, "dział", rola, email, haslo, nr_tel, kierownik_id) VALUES
+('Jan', 'Kowalski', 'Project Manager', 'IT', 'kierownik', 'j.kowalski@firma.pl', '$2a$10$xJw...', 123456789, 1), -- hasło zahashowane
+('Anna', 'Nowak', 'Programista Senior', 'IT', 'kierownik', 'a.nowak@firma.pl', '$2a$10$yHk...', 987654321, 2),
+('Piotr', 'Wiśniewski', 'Analityk Biznesowy', 'Analiza', 'pracownik', 'p.wisniewski@firma.pl', '$2a$10$zTl...', 555666777, 1),
+('Maria', 'Wójcik', 'UX Designer', 'Design', 'pracownik', 'm.wojcik@firma.pl', '$2a$10$qWe...', 111222333, 1),
+('Krzysztof', 'Lewandowski', 'Tester', 'QA', 'pracownik', 'k.lewandowski@firma.pl', '$2a$10$rTy...', 444555666, 2);
+
+-- Wstawianie danych do tabeli zadania (pomijam utworzone i zmodyfikowano)
+INSERT INTO zadania (nazwa, opis, status, projekt_id) VALUES
+('Backend API', 'Stworzyć endpointy REST API', 'w trakcie', 1),
+('Design interfejsu', 'Przygotować makety UI', 'do zrobienia', 1),
+('Testy integracyjne', 'Przetestować integrację z płatnościami', 'zablokowane', 2),
+('Logowanie użytkownika', 'Implementacja auth JWT', 'gotowe', 3),
+('Responsywny layout', 'Dostosować do mobile', 'w trakcie', 3);
+
+-- Wstawianie danych do tabeli zadania_uzytkownicy
+INSERT INTO zadania_uzytkownicy (zadania_zadanie_id, uzytkownicy_uzytkownik_id) VALUES
+(1, 2), -- Anna Nowak pracuje nad Backend API
+(1, 3), -- Piotr Wiśniewski też pracuje nad Backend API
+(2, 4), -- Maria Wójcik pracuje nad Design interfejsu
+(3, 5), -- Krzysztof Lewandowski pracuje nad Testami integracyjnymi
+(4, 2), -- Anna Nowak pracuje nad Logowaniem użytkownika
+(5, 4); -- Maria Wójcik pracuje nad Responsywnym layoutem
+
+-- Wstawianie danych do tabeli komentarze (pomijam utworzony i zmodyfikowano)
+INSERT INTO komentarze (tresc, uzytkownik_id, zadanie_id) VALUES
+('Endpointy prawie gotowe, brakuje tylko /users', 2, 1),
+('Makety będą gotowe do piątku', 4, 2),
+('Blokada - brak danych testowych od banku', 5, 3),
+('JWT działa, można mergować do main', 2, 4),
+('Problemy z wyświetlaniem na Safari', 4, 5);
+
