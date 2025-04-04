@@ -1,0 +1,32 @@
+INSERT INTO projekty (nazwa) VALUES 
+('System CRM'), 
+('Aplikacja Mobilna'), 
+('Strona Firmowa');
+
+-- Dodanie użytkowników
+INSERT INTO uzytkownicy (imie, nazwisko, stanowisko, dzial, rola, email, login, haslo, nr_tel, kierownik_id, czy_aktywny) VALUES 
+('Jan', 'Kowalski', 'Developer', 'IT', 'pracownik', 'jan.kowalski@example.com', 'haslo123', 123456789, 1, TRUE),
+('Anna', 'Nowak', 'Project Manager', 'Zarządzanie', 'kierownik', 'anna.nowak@example.com', 'bezpiecznehaslo', 987654321, 1, TRUE),
+('Piotr', 'Wiśniewski', 'Tester', 'IT', 'pracownik', 'piotr.wisniewski@example.com', 'testowanie123', 111222333, 2, TRUE),
+('Katarzyna', 'Mazur', 'Administrator', 'IT', 'admin', 'katarzyna.mazur@example.com', 'admin123', 444555666, 2, TRUE);
+
+-- Dodanie zadań
+INSERT INTO zadania (nazwa, opis, status, projekt_id) VALUES 
+('Stworzenie bazy danych', 'Projektowanie i wdrożenie bazy danych dla systemu CRM', 'w trakcie', 1),
+('UI Design', 'Zaprojektowanie interfejsu użytkownika dla aplikacji mobilnej', 'do zrobienia', 2),
+('Testowanie aplikacji', 'Przeprowadzenie testów funkcjonalnych', 'gotowe', 2),
+('Poprawki na stronie', 'Aktualizacja treści i usunięcie błędów', 'w trakcie', 3);
+
+-- Przypisanie użytkowników do zadań
+INSERT INTO zadania_uzytkownicy (zadania_zadanie_id, uzytkownicy_uzytkownik_id) VALUES 
+(1, 1), -- Jan Kowalski -> Stworzenie bazy danych
+(2, 2), -- Anna Nowak -> UI Design
+(3, 3), -- Piotr Wiśniewski -> Testowanie aplikacji
+(4, 4); -- Katarzyna Mazur -> Poprawki na stronie
+
+-- Dodanie komentarzy do zadań
+INSERT INTO komentarze (tresc, uzytkownik_id, zadanie_id) VALUES 
+('Baza danych gotowa do testowania', 1, 1),
+('Czy mamy już wytyczne dotyczące kolorystyki?', 2, 2),
+('Wszystkie testy przeszły pomyślnie!', 3, 3),
+('Zgłosiłem poprawki do działu marketingu', 4, 4);
