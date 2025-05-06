@@ -1,19 +1,29 @@
-import express from "express";
-
-// Routes imports
-import employeesRoute from "./routes/employeesRouter.js";
+import express from 'express';
+import sequelize from '../database.js';
+import projektyRoutes from './routes/projekty.routes.js';
+import zadaniaRoutes from './routes/zadania.routes.js' // Importowanie rout do projektów
+import komentarzeRoutes from './routes/komentarz.routes.js';
+import uzytkownicyRouter from './routes/uzytkownicy.routes.js';
 
 const app = express();
-const port = 8080;
 
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send("Something broke!");
-});
+// Middleware
+app.use(express.json()); // Obsługuje body w formacie JSON
+app.use(express.urlencoded({ extended: true }));
 
-// Routers
-app.use("/employees", employeesRoute);
+// Używanie rout
+app.use('/api/projekty', projektyRoutes); // Ścieżka do API projektów
+app.use('/api/zadania', zadaniaRoutes); // Ścieżka do API projektów
+app.use("/api/komentarze", komentarzeRoutes);
+app.use("/api/uzytkownicy", uzytkownicyRouter);
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+
+// Synchronizacja bazy danych i uruchomienie aplikacji
+sequelize.sync({ force: false }).then(() => {
+  console.log('Połączenie z bazą danych i synchronizacja zakończona!');
+  app.listen(3000, () => {
+    console.log('Server is running on http://localhost:3000');
+  });
+}).catch((error) => {
+  console.error('Błąd połączenia z bazą danych:', error);
 });
