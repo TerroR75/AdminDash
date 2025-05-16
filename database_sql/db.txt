@@ -1,57 +1,277 @@
-CREATE TABLE IF NOT EXISTS projekty (
-    projekt_id INT NOT NULL AUTO_INCREMENT,
-    nazwa VARCHAR(50) NOT NULL,
-    utworzony TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (projekt_id)
-);
+-- MySQL Workbench Forward Engineering
 
-CREATE TABLE IF NOT EXISTS zadania (
-    zadanie_id INT NOT NULL AUTO_INCREMENT,
-    nazwa VARCHAR(50) NOT NULL,
-    opis TEXT,
-    status ENUM('do zrobienia', 'w trakcie', 'gotowe', 'zablokowane') NOT NULL,
-    projekt_id INT NOT NULL,
-    utworzone TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    zmodyfikowano TIMESTAMP NULL,
-    PRIMARY KEY (zadanie_id),
-    FOREIGN KEY (projekt_id) REFERENCES projekty(projekt_id) ON UPDATE CASCADE ON DELETE CASCADE
-);
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
-CREATE TABLE IF NOT EXISTS uzytkownicy (
-    uzytkownik_id INT NOT NULL AUTO_INCREMENT,
-    imie VARCHAR(50) NOT NULL,
-    nazwisko VARCHAR(50) NOT NULL,
-    stanowisko VARCHAR(50) NOT NULL,
-    dzial VARCHAR(50) NOT NULL,
-    rola ENUM('pracownik', 'kierownik', 'admin') NOT NULL,
-    email VARCHAR(100) NULL,
-    haslo TEXT NULL,
-    utworzony TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    nr_tel INT(9),
-    kierownik_id INT NOT NULL,
-    czy_aktywny BOOLEAN NOT NULL DEFAULT TRUE,
-    ostatnie_logowanie TIMESTAMP NULL,
-    PRIMARY KEY (uzytkownik_id),
-    UNIQUE KEY unique_email (email)
-);
+-- -----------------------------------------------------
+-- Schema admindash
+-- -----------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS komentarze (
-    komentarz_id INT NOT NULL AUTO_INCREMENT,
-    tresc TEXT NOT NULL,
-    uzytkownik_id INT NOT NULL,
-    utworzony TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    zadanie_id INT NOT NULL,
-    zmodyfikowano TIMESTAMP NULL,
-    PRIMARY KEY (komentarz_id),
-    FOREIGN KEY (zadanie_id) REFERENCES zadania(zadanie_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (uzytkownik_id) REFERENCES uzytkownicy(uzytkownik_id) ON UPDATE SET NULL ON DELETE SET NULL
-);
+-- -----------------------------------------------------
+-- Schema admindash
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `admindash` DEFAULT CHARACTER SET utf8 ;
+-- -----------------------------------------------------
+-- Schema admindash
+-- -----------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS zadania_uzytkownicy (
-    zadania_uzytkownicy_id INT NOT NULL AUTO_INCREMENT,
-    zadania_zadanie_id INT NOT NULL,
-    uzytkownicy_uzytkownik_id INT NOT NULL,
-    PRIMARY KEY (zadania_uzytkownicy_id),
-    FOREIGN KEY (uzytkownicy_uzytkownik_id) REFERENCES uzytkownicy(uzytkownik_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (zadania_zadanie_id) REFERENCES zadania(zadanie_id) ON UPDATE CASCADE ON DELETE CASCADE
-);
+-- -----------------------------------------------------
+-- Schema admindash
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `admindash` DEFAULT CHARACTER SET latin1 ;
+USE `admindash` ;
+
+-- -----------------------------------------------------
+-- Table `admindash`.`powiadomienia`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `admindash`.`powiadomienia` (
+  `powiadomienie_id` INT NOT NULL,
+  `tytul` VARCHAR(100) NULL,
+  `tresc` TEXT NULL,
+  `autor` VARCHAR(100) NULL,
+  `kategoria` ENUM('informacja', 'alert', 'wydarzenie', 'aktualizacja') NULL,
+  PRIMARY KEY (`powiadomienie_id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `admindash`.`dokumenty`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `admindash`.`dokumenty` (
+  `dokument_id` INT NOT NULL,
+  `tytul` VARCHAR(100) NULL,
+  `opis` TEXT NULL,
+  `dzial` VARCHAR(45) NULL,
+  `autor` VARCHAR(100) NULL,
+  `link` TEXT NULL,
+  PRIMARY KEY (`dokument_id`))
+ENGINE = InnoDB;
+
+USE `admindash` ;
+
+-- -----------------------------------------------------
+-- Table `admindash`.`uzytkownicy`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `admindash`.`uzytkownicy` (
+  `uzytkownik_id` INT(11) NOT NULL AUTO_INCREMENT,
+  `imie` VARCHAR(50) NOT NULL,
+  `nazwisko` VARCHAR(50) NOT NULL,
+  `stanowisko` VARCHAR(50) NOT NULL,
+  `dzial` VARCHAR(50) NOT NULL,
+  `rola` ENUM('pracownik', 'kierownik', 'admin') NOT NULL,
+  `email` VARCHAR(100) NOT NULL,
+  `haslo` TEXT NOT NULL,
+  `nr_tel` INT(9) NULL DEFAULT NULL,
+  `kierownik_id` INT(11) NOT NULL,
+  `czy_aktywny` TINYINT NOT NULL DEFAULT 0,
+  `utworzony` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  `ostatnie_logowanie` TIMESTAMP NULL DEFAULT NULL,
+  `usuniety` TINYINT NULL,
+  PRIMARY KEY (`uzytkownik_id`),
+  UNIQUE INDEX `uzytkownik_id_UNIQUE` (`uzytkownik_id` ASC),
+  UNIQUE INDEX `email_UNIQUE` (`email` ASC))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_polish_ci;
+
+
+-- -----------------------------------------------------
+-- Table `admindash`.`projekty`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `admindash`.`projekty` (
+  `projekt_id` INT(11) NOT NULL AUTO_INCREMENT,
+  `nazwa` VARCHAR(50) NOT NULL,
+  `utworzony` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  `opis` TEXT NULL,
+  PRIMARY KEY (`projekt_id`),
+  UNIQUE INDEX `projekt_id_UNIQUE` (`projekt_id` ASC))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_polish_ci;
+
+
+-- -----------------------------------------------------
+-- Table `admindash`.`zadania`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `admindash`.`zadania` (
+  `zadanie_id` INT(11) NOT NULL AUTO_INCREMENT,
+  `utworzone_przez` INT(11) NOT NULL,
+  `nazwa` VARCHAR(50) NOT NULL,
+  `opis` TEXT NULL DEFAULT NULL,
+  `status` ENUM('do zrobienia', 'w trakcie', 'gotowe', 'zablokowane') NOT NULL DEFAULT 'do zrobienia',
+  `deadline` TIMESTAMP NULL,
+  `utworzone` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  `zmodyfikowano` TIMESTAMP NULL DEFAULT NULL,
+  `projekt_id` INT(11) NOT NULL,
+  PRIMARY KEY (`zadanie_id`),
+  INDEX `fk_zadania_uzytkownicy1_idx` (`utworzone_przez` ASC),
+  INDEX `fk_zadania_projekty1_idx` (`projekt_id` ASC),
+  CONSTRAINT `fk_zadania_uzytkownicy1`
+    FOREIGN KEY (`utworzone_przez`)
+    REFERENCES `admindash`.`uzytkownicy` (`uzytkownik_id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT `fk_zadania_projekty1`
+    FOREIGN KEY (`projekt_id`)
+    REFERENCES `admindash`.`projekty` (`projekt_id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_polish_ci;
+
+
+-- -----------------------------------------------------
+-- Table `admindash`.`komentarze`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `admindash`.`komentarze` (
+  `komentarz_id` INT(11) NOT NULL AUTO_INCREMENT,
+  `uzytkownik_id` INT(11) NOT NULL,
+  `zadanie_id` INT(11) NOT NULL,
+  `tresc` TEXT NOT NULL,
+  `utworzony` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  `zmodyfikowano` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`komentarz_id`),
+  UNIQUE INDEX `komentarz_id_UNIQUE` (`komentarz_id` ASC),
+  INDEX `fk_komentarze_uzytkownicy1_idx` (`uzytkownik_id` ASC),
+  INDEX `fk_komentarze_zadania1_idx` (`zadanie_id` ASC),
+  CONSTRAINT `fk_komentarze_uzytkownicy1`
+    FOREIGN KEY (`uzytkownik_id`)
+    REFERENCES `admindash`.`uzytkownicy` (`uzytkownik_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_komentarze_zadania1`
+    FOREIGN KEY (`zadanie_id`)
+    REFERENCES `admindash`.`zadania` (`zadanie_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_polish_ci;
+
+
+-- -----------------------------------------------------
+-- Table `admindash`.`przypisani_do_projektow`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `admindash`.`przypisani_do_projektow` (
+  `przypisanie_id` INT(11) NOT NULL AUTO_INCREMENT,
+  `projekt_id` INT(11) NOT NULL,
+  `uzytkownik_id` INT(11) NOT NULL,
+  PRIMARY KEY (`przypisanie_id`),
+  UNIQUE INDEX `przypisanie_id_UNIQUE` (`przypisanie_id` ASC),
+  INDEX `fk_przypisani_do_projektow_projekty1_idx` (`projekt_id` ASC),
+  INDEX `fk_przypisani_do_projektow_uzytkownicy1_idx` (`uzytkownik_id` ASC),
+  CONSTRAINT `fk_przypisani_do_projektow_projekty1`
+    FOREIGN KEY (`projekt_id`)
+    REFERENCES `admindash`.`projekty` (`projekt_id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT `fk_przypisani_do_projektow_uzytkownicy1`
+    FOREIGN KEY (`uzytkownik_id`)
+    REFERENCES `admindash`.`uzytkownicy` (`uzytkownik_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_polish_ci;
+
+
+-- -----------------------------------------------------
+-- Table `admindash`.`przypisani_do_zadan`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `admindash`.`przypisani_do_zadan` (
+  `przypisanie_id` INT(11) NOT NULL AUTO_INCREMENT,
+  `zadanie_id` INT(11) NOT NULL,
+  `uzytkownik_id` INT(11) NOT NULL,
+  PRIMARY KEY (`przypisanie_id`),
+  UNIQUE INDEX `przypisanie_id_UNIQUE` (`przypisanie_id` ASC),
+  INDEX `fk_przypisani_do_zadan_zadania1_idx` (`zadanie_id` ASC),
+  INDEX `fk_przypisani_do_zadan_uzytkownicy1_idx` (`uzytkownik_id` ASC),
+  CONSTRAINT `fk_przypisani_do_zadan_zadania1`
+    FOREIGN KEY (`zadanie_id`)
+    REFERENCES `admindash`.`zadania` (`zadanie_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT `fk_przypisani_do_zadan_uzytkownicy1`
+    FOREIGN KEY (`uzytkownik_id`)
+    REFERENCES `admindash`.`uzytkownicy` (`uzytkownik_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_polish_ci;
+
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+
+-- 🔐 Użytkownicy
+INSERT INTO uzytkownicy (imie, nazwisko, stanowisko, dzial, rola, email, haslo, nr_tel, kierownik_id, czy_aktywny)
+VALUES
+('Jan', 'Nowak', 'Programista', 'Dział IT', 'pracownik', 'jan.nowak@example.com', 'haslo1', 123456789, 3, 1),
+('Anna', 'Kowalska', 'Tester', 'Dział IT', 'pracownik', 'anna.kowalska@example.com', 'haslo2', 987654321, 3, 1),
+('Adam', 'Wiśniewski', 'Kierownik IT', 'Dział IT', 'admin', 'adam.wisniewski@example.com', 'haslo3', 666666666, 4, 1),
+('Maria', 'Lewandowska', 'Admin', 'Dział HR', 'pracownik', 'maria.lewandowska@example.com', 'haslo4', 555555555, 4, 1);
+
+-- 📁 Projekty
+INSERT INTO projekty (nazwa, opis)
+VALUES
+('Panel administracyjny', 'System do zarządzania treściami i użytkownikami'),
+('CRM dla działu sprzedaży', 'System obsługi klientów i zarządzania relacjami'),
+('Intranet', 'Wewnętrzny portal pracowniczy'),
+('Aplikacja mobilna', 'Aplikacja na iOS i Androida');
+
+-- 🗂️ Przypisani do projektów
+INSERT INTO przypisani_do_projektow (projekt_id, uzytkownik_id)
+VALUES
+(1, 1),
+(1, 2),
+(2, 1),
+(2, 3),
+(3, 2),
+(3, 4),
+(4, 1);
+
+-- 📝 Zadania
+INSERT INTO zadania (utworzone_przez, nazwa, opis, status, deadline, projekt_id)
+VALUES
+(3, 'Stworzenie bazy danych', 'Zaprojektuj i stwórz bazę danych', 'gotowe', '2025-05-20', 1),
+(3, 'Frontend do logowania', 'Zaprojektuj i stwórz widok logowania', 'w trakcie', '2025-05-22', 1),
+(3, 'Testy jednostkowe', 'Dodaj testy do formularza', 'do zrobienia', '2025-05-25', 1),
+(3, 'Integracja z API', 'Połącz z serwerem', 'zablokowane', NULL, 2),
+(3, 'Responsywny layout', 'Dostosuj do urządzeń mobilnych', 'do zrobienia', '2025-06-01', 4);
+
+-- 👥 Przypisani do zadań
+INSERT INTO przypisani_do_zadan (zadanie_id, uzytkownik_id)
+VALUES
+(1, 1),
+(2, 1),
+(2, 2),
+(3, 2),
+(4, 1),
+(5, 1),
+(5, 2);
+
+-- 💬 Komentarze
+INSERT INTO komentarze (uzytkownik_id, zadanie_id, tresc)
+VALUES
+(1, 1, 'Skończyłem model danych.'),
+(2, 2, 'Trzeba poprawić walidację.'),
+(1, 2, 'Widok działa na Firefoxie, ale nie na Safari.'),
+(2, 3, 'Dodam testy dziś wieczorem.');
+
+-- 📢 Powiadomienia
+INSERT INTO powiadomienia (powiadomienie_id, tytul, tresc, autor, kategoria)
+VALUES
+(1, 'Nowy projekt', 'Dodano projekt CRM.', 'System', 'informacja'),
+(2, 'Awaria serwera', 'Serwer API nie odpowiada.', 'Admin', 'alert');
+
+-- 📄 Dokumenty
+INSERT INTO dokumenty (dokument_id, tytul, opis, dzial, autor, link)
+VALUES
+(1, 'Polityka bezpieczeństwa', 'Zasady dotyczące dostępu do systemów', 'IT', 'Admin', 'https://example.com/polityka.pdf'),
+(2, 'Instrukcja użytkownika', 'Jak korzystać z intranetu', 'HR', 'Maria Lewandowska', 'https://example.com/instrukcja.pdf');
+
