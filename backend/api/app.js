@@ -5,6 +5,7 @@ import zadaniaRoutes from './routes/zadania.routes.js' // Importowanie rout do p
 import komentarzeRoutes from './routes/komentarz.routes.js';
 import uzytkownicyRouter from './routes/uzytkownicy.routes.js';
 
+
 const app = express();
 
 // Middleware
@@ -27,3 +28,4 @@ sequelize.sync({ force: false }).then(() => {
 }).catch((error) => {
   console.error('Błąd połączenia z bazą danych:', error);
 });
+
