@@ -6,86 +6,134 @@ interface Task {
   id: number;
   assignedTo: string;
   assignedBy: string;
-  deadline: string;
+  deadline: Date;
   description: string;
   status: "PENDING" | "REJECTED" | "COMPLETED" | "REASSIGNED" | string;
 }
 
-const employees = [
-  { name: "Adam Sucholski", email: "adam.sucholski@firma.pl" },
-  { name: "Kamil Nowak", email: "kamil.nowak@firma.pl" },
-  { name: "Olga Wójcik", email: "olga.wojcik@firma.pl" },
-  { name: "Michał Zieliński", email: "michal.zielinski@firma.pl" },
-  { name: "Anna Kowalska", email: "anna.kowalska@firma.pl" },
-];
+type Employee = {
+  id:number;
+  email: string;
+  projects: Project[];
+}
+
+type Project = {
+  id:number;
+  name:string;
+}
 
 const EmployeeTasksPage = () => {
   const loggedUserEmail = "kamil.nowak@firma.pl"; // aktualnie zalogowany
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [formAssignedTo, setFormAssignedTo] = useState(employees[0].email);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [formAssignedTo, setFormAssignedTo] = useState<Employee | null>(null);
   const [formDescription, setFormDescription] = useState("");
   const [formDeadline, setFormDeadline] = useState("");
-
+  const [selectedUserProject, setSelectedUserProject]= useState<Project | null>(null);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
-  const [newAssignee, setNewAssignee] = useState(employees[0].email);
+  const [newAssignee, setNewAssignee] = useState("");
 
   // Dodanie przykładowych tasków na start
-  useEffect(() => {
-    const exampleTasks: Task[] = [
-      {
-        id: 1,
-        assignedTo: loggedUserEmail,
-        assignedBy: "adam.sucholski@firma.pl",
-        deadline: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2h od teraz
-        description: "Przygotuj raport miesięczny",
-        status: "PENDING",
-      },
-      {
-        id: 2,
-        assignedTo: loggedUserEmail,
-        assignedBy: "olga.wojcik@firma.pl",
-        deadline: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(), // 4h od teraz
-        description: "Napraw błąd w module X",
-        status: "PENDING",
-      },
-    ];
-    setTasks(exampleTasks);
-  }, []);
+useEffect(() => {
+  const fetchUzytkownicy = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/users/manager/2');
+      const resTasks = await fetch('http://localhost:8080/tasks/user/1');
+      if (!res.ok || !resTasks.ok) throw new Error(`Błąd HTTP: ${res.status}`);
 
-  const handleAddTask = () => {
-    if (!formDescription || !formDeadline) {
+      const users = await res.json();
+      const tasks = await resTasks.json();
+      if (!users || users.length === 0) return;
+
+      setEmployees(users);
+      console.log(tasks);
+      const firstUser = users[0];
+      setFormAssignedTo(firstUser);
+      setTasks(tasks);
+      console.log(formatDistanceToNow(new Date(tasks[0].deadline), { addSuffix: true }));
+      if (firstUser.projects && firstUser.projects.length > 0) {
+        setSelectedUserProject(firstUser.projects[0]);
+      } else {
+        setSelectedUserProject(null);
+      }
+
+    } catch (err) {
+      console.error("Błąd pobierania użytkowników:", err);
+    }
+  };
+
+  fetchUzytkownicy();
+}, []);
+
+  const getUserIdByEmail = (email: string) => {
+    const user = employees.find((emp) => emp.email === email);
+    return user?.id || null;
+  };
+
+  const handleAddTask = async () => {
+    if (!formDescription || !formDeadline || !formAssignedTo || !selectedUserProject) {
       alert("Wypełnij wszystkie pola!");
       return;
     }
 
-    const newTask: Task = {
-      id: tasks.length + 1,
-      assignedTo: formAssignedTo,
-      assignedBy: loggedUserEmail,
-      deadline: formDeadline,
-      description: formDescription,
-      status: "PENDING",
-    };
+    try {
+      const response = await fetch("http://localhost:8080/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          opis: formDescription,
+          deadline: formDeadline,
+          status: "do zrobienia",
+          utworzone_przez: 2, // <- zamień na dynamiczne ID zalogowanego użytkownika, jeśli potrzebujesz
+          projekt_id: selectedUserProject?.id, // <- ustaw odpowiedni ID projektu (możesz go też pobrać dynamicznie)
+          wykonawca: getUserIdByEmail(formAssignedTo.email), // <- helper funkcja poniżej
+          nazwa: `Zadanie - ${formDescription.slice(0, 20)}`,
+        }),
+      });
 
-    setTasks((prev) => [...prev, newTask]);
-    setFormDescription("");
-    setFormDeadline("");
-    setFormAssignedTo(employees[0].email);
-    alert("Task dodany!");
+      if (!response.ok) throw new Error("Błąd podczas dodawania zadania.");
+
+      const data = await response.json();
+      console.log("Dodano zadanie:", data);
+
+      alert("Zadanie zostało dodane!");
+
+      setFormDescription("");
+      setFormDeadline("");
+      setFormAssignedTo(null);
+    } catch (err: any) {
+      console.error(err);
+      alert("Nie udało się dodać zadania.");
+    }
   };
 
-  const handleComplete = (taskId: number) => {
+  const handleStatusChange = async (taskId: number, newStatus: 'gotowe' | 'zablokowane') => {
+  try {
+    const response = await fetch(`http://localhost:8080/tasks/${taskId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: newStatus }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Błąd aktualizacji statusu');
+    }
+
+    const { zadanie } = await response.json();
+
     setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: "COMPLETED" } : t))
+      prev.map((t) => (t.id === taskId ? { ...t, status: zadanie.status } : t))
     );
-  };
-
-  const handleReject = (taskId: number) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: "REJECTED" } : t))
-    );
-  };
+  } catch (err) {
+    console.error(err);
+    alert('Nie udało się zmienić statusu zadania');
+  }
+};
 
   const openReassignModal = (taskId: number) => {
     setSelectedTaskId(taskId);
@@ -93,19 +141,40 @@ const EmployeeTasksPage = () => {
     setShowReassignModal(true);
   };
 
-  const confirmReassign = () => {
-    if (selectedTaskId != null) {
+  const handleChangeSelectedUser = (email:string) => {
+    setFormAssignedTo(employees.find((emp) => emp.email === email) || null);
+  }
+
+  const confirmReassign = async () => {
+  if (selectedTaskId != null && newAssignee != null) {
+    try {
+      console.log(selectedTaskId, newAssignee);
+      const response = await fetch(`http://localhost:8080/tasks/${selectedTaskId}/reassign`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newAssigneeId: getUserIdByEmail(newAssignee)}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Nie udało się przypisać ponownie zadania');
+      }
+
+      const { zadanie } = await response.json();
+
       setTasks((prev) =>
-        prev.map((t) =>
-          t.id === selectedTaskId
-            ? { ...t, assignedTo: newAssignee, status: "REASSIGNED" }
-            : t
-        )
+        prev.filter((task)=> task.id != selectedTaskId)
       );
+
       setShowReassignModal(false);
-      alert(`Task ${selectedTaskId} przekazano do ${newAssignee}`);
+      alert(`Zadanie ${selectedTaskId} przekazano do ${newAssignee}`);
+    } catch (err) {
+      console.error(err);
+      alert('Błąd przypisania zadania');
     }
-  };
+  }
+};
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -121,8 +190,6 @@ const EmployeeTasksPage = () => {
     }
   };
 
-  const visibleTasks = tasks.filter((t) => t.assignedTo === loggedUserEmail);
-
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-semibold">Taski dla {loggedUserEmail}</h1>
@@ -132,19 +199,44 @@ const EmployeeTasksPage = () => {
         <h2 className="text-lg font-medium">Dodaj Nowy Task</h2>
         <div className="flex flex-col gap-2">
           <label>
-            Przypisz do:
+            Przypisz do użytkownika:
             <select
-              value={formAssignedTo}
-              onChange={(e) => setFormAssignedTo(e.target.value)}
+              value={formAssignedTo?.email || ""}
+              onChange={(e)=> handleChangeSelectedUser(e.target.value)}
               className="w-full p-2 border rounded"
             >
               {employees.map((emp) => (
                 <option key={emp.email} value={emp.email}>
-                  {emp.name} ({emp.email})
+                  ({emp.email})
                 </option>
               ))}
             </select>
           </label>
+          
+          
+            <label>
+              Przypisz do projektu:
+              <select
+                value={selectedUserProject?.id || ""}
+                onChange={(e) => {
+                  const selectedId = parseInt(e.target.value);
+                  const foundProject = formAssignedTo?.projects.find((project) => project.id === selectedId);
+                  setSelectedUserProject(foundProject || null);
+                }}
+                className="w-full p-2 border rounded"
+              >
+                <option value="">Wybierz projekt</option>
+                {!!formAssignedTo?.projects
+                  ? formAssignedTo.projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))
+                  : <option disabled>Brak projektów</option>
+                }
+              </select>
+            </label>
+          
           <label>
             Opis:
             <textarea
@@ -184,28 +276,28 @@ const EmployeeTasksPage = () => {
           </tr>
         </thead>
         <tbody>
-          {visibleTasks.map((task) => (
+          {tasks.map((task) => (
             <tr key={task.id} className="text-center">
               <td className="p-2 border">{task.id}</td>
               <td className="p-2 border">{task.assignedBy}</td>
               <td className="p-2 border">{new Date(task.deadline).toLocaleString()}</td>
               <td className="p-2 border">{task.description}</td>
               <td className="p-2 border">
-                {task.status === "PENDING"
+                {task.status === "do zrobienia"
                   ? formatDistanceToNow(new Date(task.deadline), { addSuffix: true })
                   : "-"}
               </td>
               <td className="p-2 border space-x-2">
-                {task.status === "PENDING" ? (
+                {task.status === "do zrobienia" ? (
                   <>
                     <button
-                      onClick={() => handleComplete(task.id)}
+                      onClick={() => handleStatusChange(task.id, 'gotowe')}
                       className="px-2 py-1 bg-green-500 text-white rounded"
                     >
                       ✔️
                     </button>
                     <button
-                      onClick={() => handleReject(task.id)}
+                      onClick={() => handleStatusChange(task.id, 'zablokowane')}
                       className="px-2 py-1 bg-red-500 text-white rounded"
                     >
                       ❌
@@ -241,7 +333,7 @@ const EmployeeTasksPage = () => {
             >
               {employees.map((emp) => (
                 <option key={emp.email} value={emp.email}>
-                  {emp.name} ({emp.email})
+                  ({emp.email})
                 </option>
               ))}
             </select>

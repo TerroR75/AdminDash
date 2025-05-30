@@ -20,7 +20,7 @@ const menuItems = [
   {
     title: "NAWIGACJA",
     items: [
-      { icon: <FiHome />, label: "Strona główna", href: "/", visible: ["admin", "user"] },
+      { icon: <FiHome />, label: "Strona główna", href: "/dashboard/admin", visible: ["admin", "user"] },
       { icon: <FiUsers />, label: "Pracownicy", href: "/dashboard/worker-list", visible: ["admin", "user"] },
       { icon: <FiClipboard />, label: "Projekty", href: "/dashboard/projects", visible: ["admin", "user"] },
       { icon: <FiCheckSquare />, label: "Zadania", href: "/dashboard/tasks", visible: ["admin", "user"] },

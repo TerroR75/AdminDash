@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import defaulAvatar from '../../public/avatar.png';
 
 type Member = {
   name: string;
@@ -18,47 +19,47 @@ type Project = {
   tasksTotal: number;
 };
 
-const projects: Project[] = [
-  {
-    id: 1,
-    name: "Nowa strona główna",
-    description: "Redesign strony głównej firmy i poprawa UX.",
-    progress: 70,
-    status: "W TRAKCIE",
-    tasksDone: 21,
-    tasksTotal: 30,
-    team: [
-      { name: "Kamil Nowak", avatar: "/dev1.jpg" },
-      { name: "Olga Wójcik", avatar: "/dev2.jpg" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Aplikacja mobilna",
-    description: "Aplikacja mobilna dla klientów B2B.",
-    progress: 45,
-    status: "W TRAKCIE",
-    tasksDone: 9,
-    tasksTotal: 20,
-    team: [
-      { name: "Anna Kowalska", avatar: "/marketing1.jpg" },
-      { name: "Michał Zieliński", avatar: "/sales1.jpg" },
-    ],
-  },
-  {
-    id: 3,
-    name: "Automatyzacja CRM",
-    description: "Zautomatyzowanie kontaktów w CRM i generowania leadów.",
-    progress: 100,
-    status: "ZAKOŃCZONY",
-    tasksDone: 15,
-    tasksTotal: 15,
-    team: [
-      { name: "Adam Sucholski", avatar: "/ceo.jpg" },
-      { name: "Olga Wójcik", avatar: "/dev2.jpg" },
-    ],
-  },
-];
+// const projects: Project[] = [
+//   {
+//     id: 1,
+//     name: "Nowa strona główna",
+//     description: "Redesign strony głównej firmy i poprawa UX.",
+//     progress: 70,
+//     status: "W TRAKCIE",
+//     tasksDone: 21,
+//     tasksTotal: 30,
+//     team: [
+//       { name: "Kamil Nowak", avatar: "/dev1.jpg" },
+//       { name: "Olga Wójcik", avatar: "/dev2.jpg" },
+//     ],
+//   },
+//   {
+//     id: 2,
+//     name: "Aplikacja mobilna",
+//     description: "Aplikacja mobilna dla klientów B2B.",
+//     progress: 45,
+//     status: "W TRAKCIE",
+//     tasksDone: 9,
+//     tasksTotal: 20,
+//     team: [
+//       { name: "Anna Kowalska", avatar: "/marketing1.jpg" },
+//       { name: "Michał Zieliński", avatar: "/sales1.jpg" },
+//     ],
+//   },
+//   {
+//     id: 3,
+//     name: "Automatyzacja CRM",
+//     description: "Zautomatyzowanie kontaktów w CRM i generowania leadów.",
+//     progress: 100,
+//     status: "ZAKOŃCZONY",
+//     tasksDone: 15,
+//     tasksTotal: 15,
+//     team: [
+//       { name: "Adam Sucholski", avatar: "/ceo.jpg" },
+//       { name: "Olga Wójcik", avatar: "/dev2.jpg" },
+//     ],
+//   },
+// ];
 
 const StatusBadge = ({ status }: { status: Project["status"] }) => {
   const color =
@@ -101,7 +102,7 @@ const ProjectCard = ({ project }: { project: Project }) => (
       {project.team.map((member, idx) => (
         <Image
           key={idx}
-          src={member.avatar}
+          src={defaulAvatar}
           alt={member.name}
           width={32}
           height={32}
@@ -114,6 +115,26 @@ const ProjectCard = ({ project }: { project: Project }) => (
 
 const ProjectsPage = () => {
   const [filter, setFilter] = useState<"WSZYSTKIE" | Project["status"]>("WSZYSTKIE");
+
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    const fetchUzytkownicy = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/projects'); // lub '/api/uzytkownicy' z proxy
+        if (!response.ok) {
+          throw new Error(`Błąd HTTP: ${response.status}`);
+        }
+        const data = await response.json();
+        setProjects(data);
+      } catch (err: any) {
+        console.log(err.message);
+      } finally {
+      }
+    };
+
+    fetchUzytkownicy();
+  }, []);
 
   const filteredProjects =
     filter === "WSZYSTKIE"
