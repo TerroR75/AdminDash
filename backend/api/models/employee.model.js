@@ -1,6 +1,8 @@
-import { db } from "../../database";
+import { DataTypes, Sequelize } from "sequelize";
+import { sequelize } from "../../database.js";
+import Department from "./department.model.js";
 
-const Employee = db.define(
+const Employee = sequelize.define(
   "Employee",
   {
     employee_id: {
@@ -20,12 +22,8 @@ const Employee = db.define(
       type: DataTypes.STRING(50),
       allowNull: false,
     },
-    department: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-    },
-    role: {
-      type: DataTypes.ENUM(...RolaEnum),
+    department_id: {
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     email: {
@@ -51,5 +49,17 @@ const Employee = db.define(
     timestamps: false,
   }
 );
+
+Department.hasMany(Employee, {
+  foreignKey: "department_id",
+  sourceKey: "department_id",
+  as: "employees",
+});
+
+Employee.belongsTo(Department, {
+  foreignKey: "department_id",
+  targetKey: "department_id",
+  as: "department",
+});
 
 export default Employee;

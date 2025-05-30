@@ -1,3 +1,6 @@
+import { DataTypes, Sequelize } from "sequelize";
+import { sequelize } from "../../database.js";
+
 const Task = sequelize.define(
   "Task",
   {
@@ -12,10 +15,6 @@ const Task = sequelize.define(
     },
     descr: {
       type: DataTypes.TEXT,
-    },
-    status: {
-      type: DataTypes.ENUM(...StatusEnum),
-      allowNull: false,
     },
     project_id: {
       type: DataTypes.INTEGER,
